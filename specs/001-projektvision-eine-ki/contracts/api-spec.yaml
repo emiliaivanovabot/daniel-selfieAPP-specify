@@ -1,0 +1,321 @@
+openapi: 3.0.3
+info:
+  title: Emilia Selfie Generator API
+  description: AI-powered selfie generation with FAL.ai integration
+  version: 1.0.0
+servers:
+  - url: https://daniel-selfie.vercel.app/api
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  /generate:
+    post:
+      summary: Generate AI selfie with Emilia
+      description: Upload user photo and generate selfie with selected scene and interaction
+      operationId: generateSelfie
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: User photo (JPG/PNG/WebP, max 10MB)
+                scene:
+                  type: string
+                  enum: [candlelight, beach-sunset, nightclub, festival, wedding, coffee-shop, park-picnic, rooftop]
+                  description: Selected scene template ID
+                interaction:
+                  type: string
+                  enum: [kiss-cheek, holding-hands, hugging, smiling, clinking-glasses, laughing, selfie-pose]
+                  description: Selected interaction type ID
+              required:
+                - image
+                - scene
+                - interaction
+      responses:
+        '200':
+          description: Selfie generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Rate limit exceeded or daily quota reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitResponse'
+        '500':
+          description: Generation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /scenes:
+    get:
+      summary: Get available scene templates
+      description: Retrieve all available scene options for selfie generation
+      operationId: getScenes
+      responses:
+        '200':
+          description: Scene templates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SceneTemplate'
+
+  /interactions:
+    get:
+      summary: Get available interaction types
+      description: Retrieve all available interaction options for selfie generation
+      operationId: getInteractions
+      responses:
+        '200':
+          description: Interaction types retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  interactions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InteractionType'
+
+components:
+  schemas:
+    GenerationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        imageUrl:
+          type: string
+          format: uri
+          description: URL of generated selfie image
+          example: "https://daniel-selfie.vercel.app/generated/emilia-selfie-2025-09-19T10-30-45-123Z.jpg"
+        processingTime:
+          type: number
+          description: Processing time in milliseconds
+          example: 18500
+        dimensions:
+          type: object
+          properties:
+            width:
+              type: integer
+              example: 1024
+            height:
+              type: integer
+              example: 1365
+        downloadFilename:
+          type: string
+          description: Suggested filename for download
+          example: "emilia-selfie-2025-09-19T10-30-45-123Z.jpg"
+        falaiRequestId:
+          type: string
+          description: FAL.ai request ID for debugging
+          example: "req_123456789"
+        userTier:
+          type: string
+          enum: [free, premium]
+          description: User's tier level
+          example: "free"
+        generationsRemaining:
+          type: integer
+          description: Remaining generations for today (null for premium)
+          example: 2
+        retentionDays:
+          type: integer
+          description: Days until automatic deletion
+          example: 7
+      required:
+        - success
+        - imageUrl
+        - processingTime
+        - dimensions
+        - downloadFilename
+        - falaiRequestId
+        - userTier
+        - retentionDays
+
+    SceneTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique scene identifier
+          example: "candlelight"
+        category:
+          type: string
+          enum: [romantic, party, casual, urban]
+          description: Scene category
+          example: "romantic"
+        name:
+          type: string
+          description: Display name
+          example: "Candlelight Dinner"
+        description:
+          type: string
+          description: Scene description
+          example: "Intimate dinner setting with warm candlelight"
+        previewImage:
+          type: string
+          format: uri
+          description: Preview thumbnail URL
+          example: "/assets/scenes/candlelight-preview.jpg"
+      required:
+        - id
+        - category
+        - name
+        - description
+        - previewImage
+
+    InteractionType:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique interaction identifier
+          example: "kiss-cheek"
+        category:
+          type: string
+          enum: [romantic, friendly, party, social]
+          description: Interaction category
+          example: "romantic"
+        name:
+          type: string
+          description: Display name
+          example: "Kiss on Cheek"
+        description:
+          type: string
+          description: Interaction description
+          example: "Sweet romantic gesture perfect for couples"
+      required:
+        - id
+        - category
+        - name
+        - description
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error message
+          example: "Invalid image format. Please upload JPG, PNG, or WebP."
+        code:
+          type: string
+          description: Error code for client handling
+          example: "INVALID_IMAGE_FORMAT"
+        details:
+          type: object
+          description: Additional error details
+          properties:
+            field:
+              type: string
+              example: "image"
+            allowedFormats:
+              type: array
+              items:
+                type: string
+              example: ["jpg", "jpeg", "png", "webp"]
+      required:
+        - success
+        - error
+        - code
+
+    RateLimitResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Rate limit error message
+          example: "Rate limit exceeded. Please wait before making another request."
+        code:
+          type: string
+          description: Rate limit error code
+          example: "RATE_LIMIT_EXCEEDED"
+        retryAfter:
+          type: integer
+          description: Seconds to wait before retry
+          example: 10
+        dailyQuota:
+          type: object
+          properties:
+            used:
+              type: integer
+              example: 3
+            limit:
+              type: integer
+              example: 3
+            resetTime:
+              type: string
+              format: date-time
+              example: "2025-09-20T00:00:00Z"
+        requiresCaptcha:
+          type: boolean
+          description: Whether CAPTCHA verification is required
+          example: true
+      required:
+        - success
+        - error
+        - code
+        - retryAfter
+
+  examples:
+    GenerationSuccess:
+      summary: Successful generation response
+      value:
+        success: true
+        imageUrl: "https://daniel-selfie.vercel.app/generated/emilia-selfie-2025-09-19T10-30-45-123Z.jpg"
+        processingTime: 18500
+        dimensions:
+          width: 1024
+          height: 1365
+        downloadFilename: "emilia-selfie-2025-09-19T10-30-45-123Z.jpg"
+        falaiRequestId: "req_123456789"
+
+    ValidationError:
+      summary: Image validation error
+      value:
+        success: false
+        error: "Invalid image format. Please upload JPG, PNG, or WebP."
+        code: "INVALID_IMAGE_FORMAT"
+        details:
+          field: "image"
+          allowedFormats: ["jpg", "jpeg", "png", "webp"]
+
+    GenerationError:
+      summary: AI generation failure
+      value:
+        success: false
+        error: "Face not detected in uploaded image. Please upload a clear photo showing your face."
+        code: "FACE_NOT_DETECTED"
+        details:
+          confidence: 0.3
+          minimumRequired: 0.7

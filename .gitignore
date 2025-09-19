@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+/.pnp
+.pnp.*
+
+# builds
+.next/
+/out/
+/build
+/dist
+
+# environment
+.env*
+!.env.example
+
+# logs and cache
+*.log
+*.cache
+.DS_Store
+
+# uploads and temporary files
+uploads/
+temp/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
