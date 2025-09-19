@@ -140,16 +140,19 @@ export class FalAiClient {
 
   static async healthCheck(): Promise<boolean> {
     try {
-      // Simple health check - verify credentials are valid
-      const result = await fal.subscribe(this.MODEL, {
-        input: {
-          prompt: "test prompt",
-          image_urls: [this.REFERENCE_IMAGE_URL],
-          num_images: 1
-        },
-        pollInterval: 1000,
-        timeout: 5000,
-      });
+      // Simple health check - just verify API key is present
+      if (!process.env.FAL_API_KEY) {
+        console.error('[FAL.ai] Health check failed: No API key found');
+        return false;
+      }
+
+      if (!this.REFERENCE_IMAGE_URL) {
+        console.error('[FAL.ai] Health check failed: No reference image URL found');
+        return false;
+      }
+
+      // Don't actually call FAL.ai in health check to avoid unnecessary API calls
+      console.log('[FAL.ai] Health check passed: API key and reference image URL present');
       return true;
     } catch (error) {
       console.error('[FAL.ai] Health check failed:', error);
