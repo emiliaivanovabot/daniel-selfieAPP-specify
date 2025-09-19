@@ -61,7 +61,7 @@ export class FalAiClient {
       console.log(`[FAL.ai] Result structure:`, JSON.stringify(result, null, 2));
 
       // Handle the actual FAL.ai response structure
-      const images = result.data?.images || result.images;
+      const images = (result as any).data?.images || (result as any).images;
       if (!images || images.length === 0) {
         console.log(`[FAL.ai] No images found in result. Available keys:`, Object.keys(result));
         return {
@@ -83,7 +83,7 @@ export class FalAiClient {
         processingTime,
         dimensions: { width: 1024, height: 1365 },
         downloadFilename,
-        falaiRequestId: result.request_id || 'unknown',
+        falaiRequestId: (result as any).request_id || (result as any).requestId || 'unknown',
         userTier: 'free', // Will be determined by tier service
         retentionDays: 7, // Will be determined by tier service
       };
@@ -132,8 +132,8 @@ export class FalAiClient {
   }
 
   static generatePrompt(scene: string, interaction: string): string {
-    const sceneDesc = SCENE_DESCRIPTIONS[scene] || 'in a beautiful setting';
-    const interactionDesc = INTERACTION_DESCRIPTIONS[interaction] || 'posing together';
+    const sceneDesc = (SCENE_DESCRIPTIONS as any)[scene] || 'in a beautiful setting';
+    const interactionDesc = (INTERACTION_DESCRIPTIONS as any)[interaction] || 'posing together';
 
     return `Create a photo showing the person from the first image and the woman from the second image ${interactionDesc} ${sceneDesc}. Make it look natural and realistic, preserving the identity and facial features of both people.`;
   }
